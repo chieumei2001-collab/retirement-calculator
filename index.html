@@ -1,429 +1,680 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Retirement Planner</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<style>
-  :root{
-    --bg:#0E1626; --panel:#141F35; --panelAlt:#182541; --line:#25334E;
-    --cream:#F1ECE0; --muted:#8B96AC; --faint:#5C6784;
-    --gold:#C9A24B; --teal:#4FB3A6; --coral:#D9776B; --blue:#7F9BD1;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0; background:var(--bg); color:var(--cream);
-    font-family:'Inter',sans-serif; padding:32px 20px;
-  }
-  .wrap{max-width:1180px; margin:0 auto;}
-  .eyebrow{font-size:12px; letter-spacing:2px; color:var(--gold); font-weight:600; margin-bottom:6px;}
-  h1{font-family:'Fraunces',serif; font-size:34px; font-weight:500; margin:0;}
-  .lede{color:var(--muted); font-size:14px; margin-top:8px; max-width:640px; line-height:1.6;}
-  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:28px 0 20px;}
-  @media (max-width:860px){ .grid2{grid-template-columns:1fr;} .results-grid{grid-template-columns:1fr !important;} }
-  .panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:22px;}
-  .sec-head{display:flex; align-items:center; gap:10px; margin-bottom:14px;}
-  .sec-icon{width:30px; height:30px; border-radius:7px; background:rgba(201,162,75,0.14); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--gold); font-size:15px;}
-  .sec-title{font-family:'Fraunces',serif; font-size:17px; line-height:1.2;}
-  .sec-sub{font-size:12px; color:var(--faint);}
-  .subhead{display:flex; align-items:center; gap:8px; margin:18px 0 12px;}
-  .subhead span{font-size:13px; font-weight:500; color:var(--cream);}
-  hr.div{border:none; border-top:1px solid var(--line); margin:18px 0;}
-  .fgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
-  label.field{display:block;}
-  .flabel{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;}
-  .flabel .l{font-size:13px; color:var(--cream); font-weight:500;}
-  .flabel .h{font-size:11px; color:var(--faint);}
-  .inputbox{display:flex; align-items:center; background:var(--panelAlt); border:1px solid var(--line); border-radius:8px; padding:8px 10px; gap:6px;}
-  .inputbox .pfx,.inputbox .sfx{color:var(--faint); font-size:13px; font-family:'IBM Plex Mono',monospace; flex-shrink:0;}
-  .inputbox input{background:transparent; border:none; outline:none; color:var(--cream); font-size:14px; font-family:'IBM Plex Mono',monospace; width:100%;}
-  .inputbox input.right{text-align:right;}
-  .assump-toggle{margin-top:20px; display:flex; align-items:center; gap:6px; background:none; border:none; color:var(--faint); font-size:12px; cursor:pointer; padding:0; font-family:'Inter',sans-serif;}
-  .assump-toggle svg{transition:transform .2s;}
-  .assump-toggle.open svg{transform:rotate(180deg);}
-  #assumpBody{display:none; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px;}
-  #assumpBody.show{display:grid;}
-  .exp-row{display:flex; align-items:center; gap:12px; margin-bottom:10px;}
-  .exp-icon{width:30px; height:30px; border-radius:7px; background:var(--panelAlt); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--muted); font-size:14px;}
-  .exp-text{flex:1; min-width:0;}
-  .exp-label{font-size:13px; color:var(--cream); font-weight:500;}
-  .exp-sub{font-size:11px; color:var(--faint); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .exp-input{display:flex; align-items:center; background:var(--panelAlt); border:1px solid var(--line); border-radius:8px; padding:6px 8px; gap:4px; width:128px; flex-shrink:0;}
-  .exp-input span{color:var(--faint); font-size:12px; font-family:'IBM Plex Mono',monospace;}
-  .exp-input input{background:transparent; border:none; outline:none; color:var(--cream); font-size:13px; font-family:'IBM Plex Mono',monospace; width:100%; text-align:right;}
-  .exp-total{display:flex; justify-content:space-between; align-items:baseline; margin-top:16px; padding-top:14px; border-top:1px solid var(--line);}
-  .exp-total .l{font-size:13px; color:var(--muted);}
-  .exp-total .v{font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:600;}
-  .results-grid{display:grid; grid-template-columns:260px 1fr; gap:28px;}
-  .stat-row{display:flex; justify-content:space-between; margin-top:8px;}
-  .stat-row .l{font-size:12px; color:var(--faint);}
-  .stat-row .v{font-size:13px; font-family:'IBM Plex Mono',monospace;}
-  .callout{margin-top:16px; display:flex; gap:8px; align-items:flex-start; border-radius:8px; padding:10px;}
-  .callout.ok{background:rgba(79,179,166,0.1); border:1px solid rgba(79,179,166,0.35);}
-  .callout.warn{background:rgba(217,119,107,0.1); border:1px solid rgba(217,119,107,0.35);}
-  .callout p{margin:0; font-size:12px; color:var(--muted); line-height:1.5;}
-  .callout strong{color:var(--cream);}
-  .legend{display:flex; gap:18px; margin-top:10px; flex-wrap:wrap;}
-  .legend .item{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted);}
-  .legend .dot{width:9px; height:9px; border-radius:2px; display:inline-block;}
-  .footnote{font-size:11px; color:var(--faint); margin-top:16px; line-height:1.6;}
-  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
-  input[type=number]{-moz-appearance:textfield;}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="eyebrow">RETIREMENT PLANNER</div>
-  <h1>Your runway to retirement</h1>
-  <p class="lede">Enter your income, EPF, savings and monthly spending. The model grows each pot to your retirement age and checks it against what your expenses will cost by then.</p>
+import React, { useMemo, useState } from "react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from "recharts";
+import {
+  Wallet,
+  TrendingUp,
+  Landmark,
+  PiggyBank,
+  LineChart as LineChartIcon,
+  Home,
+  ShoppingCart,
+  Car,
+  Zap,
+  HeartPulse,
+  GraduationCap,
+  CreditCard,
+  Popcorn,
+  HandHeart,
+  MoreHorizontal,
+  ChevronDown,
+  Settings2,
+  AlertTriangle,
+  CheckCircle2,
+} from "lucide-react";
 
-  <div class="grid2">
-    <div class="panel">
-      <div class="sec-head">
-        <div class="sec-icon">&#128176;</div>
-        <div><div class="sec-title">Income &amp; savings</div><div class="sec-sub">What you earn and hold today</div></div>
-      </div>
-      <div class="fgrid">
-        <label class="field"><div class="flabel"><span class="l">Current salary</span><span class="h">monthly</span></div>
-          <div class="inputbox"><span class="pfx">RM</span><input type="number" id="salary" value="6000" class="right"></div></label>
-        <label class="field"><div class="flabel"><span class="l">Yearly increment</span><span class="h">salary growth</span></div>
-          <div class="inputbox"><input type="number" id="increment" value="4" step="0.5" class="right"><span class="sfx">%</span></div></label>
-        <label class="field"><div class="flabel"><span class="l">Annual bonus</span><span class="h">this year</span></div>
-          <div class="inputbox"><span class="pfx">RM</span><input type="number" id="bonus" value="6000" class="right"></div></label>
-        <label class="field"><div class="flabel"><span class="l">Other income</span><span class="h">monthly</span></div>
-          <div class="inputbox"><span class="pfx">RM</span><input type="number" id="otherIncome" value="0" class="right"></div></label>
-      </div>
+const FONT_IMPORT =
+  "@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');";
 
-      <hr class="div">
-      <div class="subhead"><span style="color:var(--teal)">&#127974;</span><span>EPF</span></div>
-      <div class="fgrid">
-        <label class="field"><div class="flabel"><span class="l">Current EPF savings</span></div>
-          <div class="inputbox"><span class="pfx">RM</span><input type="number" id="currentEPF" value="50000" class="right"></div></label>
-        <label class="field"><div class="flabel"><span class="l">Employee contribution</span></div>
-          <div class="inputbox"><input type="number" id="epfEmployee" value="11" step="0.5" class="right"><span class="sfx">%</span></div></label>
-        <label class="field"><div class="flabel"><span class="l">Employer contribution</span></div>
-          <div class="inputbox"><input type="number" id="epfEmployer" value="13" step="0.5" class="right"><span class="sfx">%</span></div></label>
-      </div>
+const COLORS = {
+  bg: "#0E1626",
+  panel: "#141F35",
+  panelAlt: "#182541",
+  line: "#25334E",
+  cream: "#F1ECE0",
+  muted: "#8B96AC",
+  faint: "#5C6784",
+  gold: "#C9A24B",
+  goldSoft: "#E4C878",
+  teal: "#4FB3A6",
+  coral: "#D9776B",
+};
 
-      <hr class="div">
-      <div class="subhead"><span style="color:var(--teal)">&#128179;</span><span>Fixed deposit</span></div>
-      <div class="fgrid">
-        <label class="field"><div class="flabel"><span class="l">FD amount</span></div>
-          <div class="inputbox"><span class="pfx">RM</span><input type="number" id="fd" value="20000" class="right"></div></label>
-        <label class="field"><div class="flabel"><span class="l">FD interest</span><span class="h">p.a.</span></div>
-          <div class="inputbox"><input type="number" id="fdRate" value="3.5" step="0.1" class="right"><span class="sfx">%</span></div></label>
-      </div>
+function fmtRM(n) {
+  const v = Number.isFinite(n) ? n : 0;
+  const sign = v < 0 ? "-" : "";
+  return (
+    sign +
+    "RM " +
+    Math.abs(Math.round(v)).toLocaleString("en-MY", { maximumFractionDigits: 0 })
+  );
+}
+function fmtRMk(n) {
+  const v = Number.isFinite(n) ? n : 0;
+  if (Math.abs(v) >= 1000000) return (v < 0 ? "-" : "") + "RM " + (Math.abs(v) / 1000000).toFixed(2) + "M";
+  if (Math.abs(v) >= 1000) return (v < 0 ? "-" : "") + "RM " + (Math.abs(v) / 1000).toFixed(0) + "k";
+  return fmtRM(v);
+}
 
-      <hr class="div">
-      <div class="subhead"><span style="color:var(--teal)">&#128200;</span><span>Investments</span></div>
-      <div class="fgrid">
-        <label class="field"><div class="flabel"><span class="l">Investment amount</span></div>
-          <div class="inputbox"><span class="pfx">RM</span><input type="number" id="invest" value="10000" class="right"></div></label>
-        <label class="field"><div class="flabel"><span class="l">Return</span><span class="h">per year</span></div>
-          <div class="inputbox"><input type="number" id="investReturn" value="7" step="0.5" class="right"><span class="sfx">%</span></div></label>
-      </div>
-
-      <button class="assump-toggle" id="assumpToggle">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-        Assumptions (age, EPF dividend, inflation)
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:auto"><path d="M6 9l6 6 6-6"/></svg>
-      </button>
-      <div id="assumpBody">
-        <label class="field"><div class="flabel"><span class="l">Current age</span></div>
-          <div class="inputbox"><input type="number" id="currentAge" value="30" class="right"><span class="sfx">yrs</span></div></label>
-        <label class="field"><div class="flabel"><span class="l">Retirement age</span></div>
-          <div class="inputbox"><input type="number" id="retireAge" value="60" class="right"><span class="sfx">yrs</span></div></label>
-        <label class="field"><div class="flabel"><span class="l">Project until age</span><span class="h">life expectancy</span></div>
-          <div class="inputbox"><input type="number" id="lifeExpectancy" value="80" class="right"><span class="sfx">yrs</span></div></label>
-        <label class="field"><div class="flabel"><span class="l">EPF dividend</span><span class="h">long-run avg</span></div>
-          <div class="inputbox"><input type="number" id="epfDividend" value="5.5" step="0.1" class="right"><span class="sfx">%</span></div></label>
-        <label class="field"><div class="flabel"><span class="l">Inflation</span><span class="h">future expenses</span></div>
-          <div class="inputbox"><input type="number" id="inflation" value="3" step="0.5" class="right"><span class="sfx">%</span></div></label>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="sec-head">
-        <div class="sec-icon">&#128722;</div>
-        <div><div class="sec-title">Monthly expenses</div><div class="sec-sub">Categorised so nothing's hiding</div></div>
-      </div>
-      <div id="expenseList"></div>
-      <div class="exp-total"><span class="l">Total monthly expenses</span><span class="v" id="expenseTotal">RM 4,700</span></div>
-    </div>
-  </div>
-
-  <div class="panel">
-    <div class="sec-head">
-      <div class="sec-icon">&#128200;</div>
-      <div><div class="sec-title">Readiness</div><div class="sec-sub" id="readinessSub">Projected to age 60, using the 4% withdrawal rule</div></div>
-    </div>
-    <div class="results-grid">
-      <div>
-        <svg viewBox="0 0 260 140" width="100%" style="max-width:280px" id="gaugeSvg">
-          <path d="M 30 120 A 100 100 0 0 1 230 120" fill="none" stroke="var(--line)" stroke-width="14" stroke-linecap="round"/>
-          <path id="gaugeArc" d="M 30 120 A 100 100 0 0 1 230 120" fill="none" stroke="var(--coral)" stroke-width="14" stroke-linecap="round" stroke-dasharray="314.159" stroke-dashoffset="314.159" style="transition:stroke-dashoffset .4s ease, stroke .4s ease"/>
-          <text x="130" y="102" text-anchor="middle" font-family="Fraunces,serif" font-size="34" fill="var(--cream)" id="gaugePct">0%</text>
-          <text x="130" y="124" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="var(--faint)" letter-spacing="0.5">OF RETIREMENT GOAL</text>
-        </svg>
-        <div class="stat-row"><span class="l">Corpus at retirement</span><span class="v" id="statCorpus">-</span></div>
-        <div class="stat-row"><span class="l">Target corpus (4% rule)</span><span class="v" id="statTarget">-</span></div>
-        <div class="stat-row"><span class="l">Expenses today</span><span class="v" id="statExpToday">-</span></div>
-        <div class="stat-row"><span class="l">Same expenses in 10 yrs</span><span class="v" id="statExp10">-</span></div>
-        <div class="stat-row"><span class="l">Withdrawal needed at retirement</span><span class="v" id="statFutureExp">-</span></div>
-        <div class="callout" id="surplusCallout"><span id="surplusIcon"></span><p id="surplusText"></p></div>
-        <div class="callout" id="depletionCallout"><span id="depletionIcon"></span><p id="depletionText"></p></div>
-      </div>
-      <div>
-        <div style="height:300px;"><canvas id="chart"></canvas></div>
-        <div class="legend">
-          <div class="item"><span class="dot" style="background:var(--teal)"></span>EPF</div>
-          <div class="item"><span class="dot" style="background:var(--blue)"></span>FD</div>
-          <div class="item"><span class="dot" style="background:var(--gold)"></span>Investments</div>
-          <div class="item"><span class="dot" style="background:var(--coral)"></span>Target (4% rule)</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <p class="footnote">Target corpus uses the 4% rule: annual future expenses ÷ 0.04, with expenses inflated at the rate set above. Before retirement, surplus cash (after EPF and expenses) is reinvested each year. From retirement age, the model withdraws that year's inflation-adjusted expenses from EPF, FD and investments proportionally, while the remainder keeps earning its own rate, through to the "project until" age. This is a planning estimate, not financial advice.</p>
-</div>
-
-<script>
 const EXPENSE_CATEGORIES = [
-  {key:"housing", label:"Housing", sub:"rent / mortgage, maintenance, quit rent", icon:"&#127968;", def:1200},
-  {key:"food", label:"Food & groceries", sub:"meals out, market, household supplies", icon:"&#128722;", def:800},
-  {key:"transport", label:"Transportation", sub:"fuel, tolls, parking, car loan / PT", icon:"&#128663;", def:500},
-  {key:"utilities", label:"Utilities", sub:"electricity, water, internet, phone", icon:"&#9889;", def:300},
-  {key:"health", label:"Insurance & healthcare", sub:"medical / life premiums, clinic visits", icon:"&#10084;", def:400},
-  {key:"education", label:"Education & childcare", sub:"school fees, tuition, daycare", icon:"&#127891;", def:300},
-  {key:"debt", label:"Debt repayments", sub:"personal loans, credit cards (excl. above)", icon:"&#128179;", def:300},
-  {key:"lifestyle", label:"Personal & lifestyle", sub:"shopping, entertainment, subscriptions", icon:"&#127871;", def:400},
-  {key:"family", label:"Family support & giving", sub:"parents, zakat / tithe, donations", icon:"&#129309;", def:300},
-  {key:"misc", label:"Miscellaneous / buffer", sub:"unplanned & irregular costs", icon:"&#8943;", def:200},
+  { key: "housing", label: "Housing", sub: "rent / mortgage, maintenance, quit rent", icon: Home, default: 1200 },
+  { key: "food", label: "Food & groceries", sub: "meals out, market, household supplies", icon: ShoppingCart, default: 800 },
+  { key: "transport", label: "Transportation", sub: "fuel, tolls, parking, car loan / PT", icon: Car, default: 500 },
+  { key: "utilities", label: "Utilities", sub: "electricity, water, internet, phone", icon: Zap, default: 300 },
+  { key: "health", label: "Insurance & healthcare", sub: "medical / life premiums, clinic visits", icon: HeartPulse, default: 400 },
+  { key: "education", label: "Education & childcare", sub: "school fees, tuition, daycare", icon: GraduationCap, default: 300 },
+  { key: "debt", label: "Debt repayments", sub: "personal loans, credit cards (excl. above)", icon: CreditCard, default: 300 },
+  { key: "lifestyle", label: "Personal & lifestyle", sub: "shopping, entertainment, subscriptions", icon: Popcorn, default: 400 },
+  { key: "family", label: "Family support & giving", sub: "parents, zakat / tithe, donations", icon: HandHeart, default: 300 },
+  { key: "misc", label: "Miscellaneous / buffer", sub: "unplanned & irregular costs", icon: MoreHorizontal, default: 200 },
 ];
 
-const listEl = document.getElementById('expenseList');
-EXPENSE_CATEGORIES.forEach(c=>{
-  const row = document.createElement('div');
-  row.className = 'exp-row';
-  row.innerHTML = `
-    <div class="exp-icon">${c.icon}</div>
-    <div class="exp-text">
-      <div class="exp-label">${c.label}</div>
-      <div class="exp-sub">${c.sub}</div>
-    </div>
-    <div class="exp-input"><span>RM</span><input type="number" id="exp_${c.key}" value="${c.def}" min="0"></div>
-  `;
-  listEl.appendChild(row);
-});
+function useProjection(inputs, expenses, assump) {
+  return useMemo(() => {
+    const retireYears = Math.max(assump.retireAge - assump.currentAge, 0);
+    const totalYears = Math.max(assump.lifeExpectancy - assump.currentAge, 0);
+    let epf = inputs.currentEPF;
+    let fd = inputs.fd;
+    let invest = inputs.invest;
+    let salary = inputs.salary;
+    let bonus = inputs.bonus;
+    const monthlyExpenseToday = EXPENSE_CATEGORIES.reduce((s, c) => s + (expenses[c.key] || 0), 0);
+    const epfRate = (inputs.epfEmployee + inputs.epfEmployer) / 100;
+    const rows = [];
+    let corpusAtRetirement = null;
+    let depletedAge = null;
 
-function fmtRM(n){
-  n = Number.isFinite(n) ? n : 0;
-  const sign = n < 0 ? "-" : "";
-  return sign + "RM " + Math.abs(Math.round(n)).toLocaleString('en-MY');
-}
-function fmtRMk(n){
-  n = Number.isFinite(n) ? n : 0;
-  if (Math.abs(n) >= 1000000) return (n<0?"-":"") + "RM " + (Math.abs(n)/1000000).toFixed(2) + "M";
-  if (Math.abs(n) >= 1000) return (n<0?"-":"") + "RM " + (Math.abs(n)/1000).toFixed(0) + "k";
-  return fmtRM(n);
-}
-function val(id){ const v = parseFloat(document.getElementById(id).value); return Number.isFinite(v) ? v : 0; }
+    for (let t = 0; t <= totalYears; t++) {
+      const age = assump.currentAge + t;
+      const isRetired = age >= assump.retireAge;
+      let withdrawal = 0;
 
-let chart;
-function initChart(){
-  const ctx = document.getElementById('chart').getContext('2d');
-  chart = new Chart(ctx, {
-    type: 'line',
-    data: { labels: [], datasets: [
-      {label:'EPF', data:[], borderColor:'#4FB3A6', backgroundColor:'rgba(79,179,166,0.25)', fill:true, stack:'s', tension:0.3, pointRadius:0, borderWidth:1.5},
-      {label:'FD', data:[], borderColor:'#7F9BD1', backgroundColor:'rgba(127,155,209,0.22)', fill:true, stack:'s', tension:0.3, pointRadius:0, borderWidth:1.5},
-      {label:'Investments', data:[], borderColor:'#C9A24B', backgroundColor:'rgba(201,162,75,0.25)', fill:true, stack:'s', tension:0.3, pointRadius:0, borderWidth:1.5},
-      {label:'Target', data:[], borderColor:'#D9776B', borderDash:[6,4], fill:false, pointRadius:0, borderWidth:1.5}
-    ]},
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      interaction:{mode:'index', intersect:false},
-      plugins:{
-        legend:{display:false},
-        tooltip:{
-          backgroundColor:'#182541', borderColor:'#25334E', borderWidth:1, titleColor:'#F1ECE0', bodyColor:'#8B96AC',
-          callbacks:{
-            title: (items)=>'Age ' + items[0].label,
-            label: (item)=> item.dataset.label + ': ' + fmtRM(item.raw)
-          }
-        }
-      },
-      scales:{
-        x:{ grid:{display:false}, ticks:{color:'#5C6784', font:{family:'IBM Plex Mono', size:11}} },
-        y:{ stacked:true, grid:{color:'#25334E'}, ticks:{color:'#5C6784', font:{family:'IBM Plex Mono', size:11}, callback:(v)=>fmtRMk(v)} }
-      }
-    }
-  });
-}
+      if (!isRetired) {
+        const annualSalary = salary * 12;
+        const epfContribution = (annualSalary + bonus) * epfRate + inputs.epfVoluntary * 12;
+        epf = epf * (1 + assump.epfDividend / 100) + epfContribution;
+        fd = fd * (1 + inputs.fdRate / 100);
 
-function compute(){
-  const inputs = {
-    salary: val('salary'), increment: val('increment'), currentEPF: val('currentEPF'),
-    epfEmployee: val('epfEmployee'), epfEmployer: val('epfEmployer'), bonus: val('bonus'),
-    fd: val('fd'), fdRate: val('fdRate'), invest: val('invest'), investReturn: val('investReturn'),
-    otherIncome: val('otherIncome')
-  };
-  const assump = {
-    currentAge: val('currentAge'), retireAge: val('retireAge'), lifeExpectancy: val('lifeExpectancy'),
-    epfDividend: val('epfDividend'), inflation: val('inflation')
-  };
-  const expenses = {};
-  let monthlyExpenseToday = 0;
-  EXPENSE_CATEGORIES.forEach(c=>{ const v = val('exp_'+c.key); expenses[c.key]=v; monthlyExpenseToday += v; });
+        const monthlyIncomeAfterEpf = salary * (1 - inputs.epfEmployee / 100) + inputs.otherIncome - inputs.epfVoluntary;
+        const monthlySurplus = monthlyIncomeAfterEpf - monthlyExpenseToday;
+        const annualSurplus = Math.max(monthlySurplus, 0) * 12;
+        invest = invest * (1 + inputs.investReturn / 100) + annualSurplus;
 
-  const retireYears = Math.max(assump.retireAge - assump.currentAge, 0);
-  const totalYears = Math.max(assump.lifeExpectancy - assump.currentAge, 0);
-  let epf = inputs.currentEPF, fd = inputs.fd, invest = inputs.invest;
-  let salary = inputs.salary, bonus = inputs.bonus;
-  const epfRate = (inputs.epfEmployee + inputs.epfEmployer) / 100;
-
-  const rows = [];
-  let corpusAtRetirement = null;
-  let depletedAge = null;
-
-  for (let t=0; t<=totalYears; t++){
-    const age = assump.currentAge + t;
-    const isRetired = age >= assump.retireAge;
-
-    if (!isRetired){
-      const annualSalary = salary * 12;
-      const epfContribution = (annualSalary + bonus) * epfRate;
-      epf = epf * (1 + assump.epfDividend/100) + epfContribution;
-      fd = fd * (1 + inputs.fdRate/100);
-
-      const monthlyIncomeAfterEpf = salary * (1 - inputs.epfEmployee/100) + inputs.otherIncome;
-      const monthlySurplus = monthlyIncomeAfterEpf - monthlyExpenseToday;
-      const annualSurplus = Math.max(monthlySurplus, 0) * 12;
-      invest = invest * (1 + inputs.investReturn/100) + annualSurplus;
-
-      salary = salary * (1 + inputs.increment/100);
-      bonus = bonus * (1 + inputs.increment/100);
-    } else {
-      if (age === assump.retireAge) corpusAtRetirement = epf + fd + invest;
-
-      const annualWithdrawalNeeded = monthlyExpenseToday * Math.pow(1 + assump.inflation/100, t) * 12;
-      const totalBefore = epf + fd + invest;
-
-      if (totalBefore <= 0){
-        epf = 0; fd = 0; invest = 0;
-        if (depletedAge === null) depletedAge = age;
+        salary = salary * (1 + inputs.increment / 100);
+        bonus = bonus * (1 + inputs.increment / 100);
       } else {
-        const withdrawAmt = Math.min(annualWithdrawalNeeded, totalBefore);
-        if (withdrawAmt < annualWithdrawalNeeded && depletedAge === null) depletedAge = age;
-        epf -= withdrawAmt * (epf/totalBefore);
-        fd -= withdrawAmt * (fd/totalBefore);
-        invest -= withdrawAmt * (invest/totalBefore);
+        if (age === assump.retireAge) corpusAtRetirement = epf + fd + invest;
 
-        epf = Math.max(epf,0) * (1 + assump.epfDividend/100);
-        fd = Math.max(fd,0) * (1 + inputs.fdRate/100);
-        invest = Math.max(invest,0) * (1 + inputs.investReturn/100);
+        const annualWithdrawalNeeded = monthlyExpenseToday * Math.pow(1 + assump.inflation / 100, t) * 12;
+        const totalBefore = epf + fd + invest;
+
+        if (totalBefore <= 0) {
+          epf = 0;
+          fd = 0;
+          invest = 0;
+          if (depletedAge === null) depletedAge = age;
+        } else {
+          const withdrawAmt = Math.min(annualWithdrawalNeeded, totalBefore);
+          if (withdrawAmt < annualWithdrawalNeeded && depletedAge === null) depletedAge = age;
+          epf -= withdrawAmt * (epf / totalBefore);
+          fd -= withdrawAmt * (fd / totalBefore);
+          invest -= withdrawAmt * (invest / totalBefore);
+          withdrawal = withdrawAmt;
+
+          epf = Math.max(epf, 0) * (1 + assump.epfDividend / 100);
+          fd = Math.max(fd, 0) * (1 + inputs.fdRate / 100);
+          invest = Math.max(invest, 0) * (1 + inputs.investReturn / 100);
+        }
       }
+
+      rows.push({
+        age,
+        epf: Math.round(Math.max(epf, 0)),
+        fd: Math.round(Math.max(fd, 0)),
+        invest: Math.round(Math.max(invest, 0)),
+        total: Math.round(Math.max(epf, 0) + Math.max(fd, 0) + Math.max(invest, 0)),
+        withdrawal: Math.round(withdrawal),
+      });
     }
 
-    rows.push({
-      age,
-      epf: Math.round(Math.max(epf,0)),
-      fd: Math.round(Math.max(fd,0)),
-      invest: Math.round(Math.max(invest,0)),
-      total: Math.round(Math.max(epf,0)+Math.max(fd,0)+Math.max(invest,0))
-    });
-  }
+    if (corpusAtRetirement === null) {
+      corpusAtRetirement = rows.length ? rows[0].total : inputs.currentEPF + inputs.fd + inputs.invest;
+    }
 
-  if (corpusAtRetirement === null){
-    corpusAtRetirement = rows.length ? rows[0].total : inputs.currentEPF + inputs.fd + inputs.invest;
-  }
+    const futureMonthlyExpense = monthlyExpenseToday * Math.pow(1 + assump.inflation / 100, retireYears);
+    const expenseIn10Yrs = monthlyExpenseToday * Math.pow(1 + assump.inflation / 100, Math.min(10, totalYears));
+    const targetCorpus = (futureMonthlyExpense * 12) / 0.04;
+    const progressPct = targetCorpus > 0 ? (corpusAtRetirement / targetCorpus) * 100 : 0;
+    const corpusAtEnd = rows.length ? rows[rows.length - 1].total : 0;
 
-  const futureMonthlyExpense = monthlyExpenseToday * Math.pow(1 + assump.inflation/100, retireYears);
-  const expenseIn10Yrs = monthlyExpenseToday * Math.pow(1 + assump.inflation/100, Math.min(10, totalYears));
-  const targetCorpus = (futureMonthlyExpense * 12) / 0.04;
-  const progressPct = targetCorpus > 0 ? (corpusAtRetirement/targetCorpus)*100 : 0;
-  const corpusAtEnd = rows.length ? rows[rows.length-1].total : 0;
-  const todaySurplus = (inputs.salary*(1-inputs.epfEmployee/100) + inputs.otherIncome) - monthlyExpenseToday;
+    const monthlyIncomeToday = inputs.salary * (1 - inputs.epfEmployee / 100) + inputs.otherIncome - inputs.epfVoluntary;
+    const todaySurplus = monthlyIncomeToday - monthlyExpenseToday;
 
-  return {rows, monthlyExpenseToday, expenseIn10Yrs, futureMonthlyExpense, targetCorpus, corpusAtRetirement, corpusAtEnd, progressPct, todaySurplus, depletedAge, assump};
+    return {
+      rows,
+      monthlyExpenseToday,
+      expenseIn10Yrs,
+      futureMonthlyExpense,
+      targetCorpus,
+      corpusAtRetirement,
+      corpusAtEnd,
+      progressPct,
+      todaySurplus,
+      depletedAge,
+      retireYears,
+      totalYears,
+    };
+  }, [inputs, expenses, assump]);
 }
 
-function render(){
-  const r = compute();
-
-  document.getElementById('expenseTotal').textContent = fmtRM(r.monthlyExpenseToday);
-  document.getElementById('readinessSub').textContent = `Growth to age ${r.assump.retireAge}, then drawdown to age ${r.assump.lifeExpectancy}`;
-  document.getElementById('statCorpus').textContent = fmtRMk(r.corpusAtRetirement);
-  document.getElementById('statTarget').textContent = fmtRMk(r.targetCorpus);
-  document.getElementById('statExpToday').textContent = fmtRM(r.monthlyExpenseToday) + '/mo';
-  document.getElementById('statExp10').textContent = fmtRM(r.expenseIn10Yrs) + '/mo';
-  document.getElementById('statFutureExp').textContent = fmtRM(r.futureMonthlyExpense) + '/mo';
-
-  const depCallout = document.getElementById('depletionCallout');
-  const depIcon = document.getElementById('depletionIcon');
-  const depText = document.getElementById('depletionText');
-  if (r.depletedAge === null){
-    depCallout.className = 'callout ok';
-    depIcon.innerHTML = '&#10003;';
-    depText.innerHTML = `Withdrawing inflation-adjusted expenses each year, your corpus lasts to age ${r.assump.lifeExpectancy} with <strong>${fmtRMk(r.corpusAtEnd)}</strong> left over.`;
-  } else {
-    depCallout.className = 'callout warn';
-    depIcon.innerHTML = '&#9888;';
-    depText.innerHTML = `At this rate, your savings run out at age <strong>${r.depletedAge}</strong> — ${r.assump.lifeExpectancy - r.depletedAge} years short of ${r.assump.lifeExpectancy}.`;
-  }
-
-  const clamped = Math.max(0, Math.min(r.progressPct, 130));
-  const circumference = Math.PI * 100;
-  const frac = Math.min(clamped/130, 1);
-  const offset = circumference * (1 - frac);
-  let color = 'var(--coral)';
-  if (r.progressPct >= 100) color = 'var(--teal)';
-  else if (r.progressPct >= 60) color = 'var(--gold)';
-  const arc = document.getElementById('gaugeArc');
-  arc.style.strokeDashoffset = offset;
-  arc.style.stroke = color;
-  document.getElementById('gaugePct').textContent = Math.round(r.progressPct) + '%';
-
-  const callout = document.getElementById('surplusCallout');
-  const icon = document.getElementById('surplusIcon');
-  const text = document.getElementById('surplusText');
-  if (r.todaySurplus >= 0){
-    callout.className = 'callout ok';
-    icon.innerHTML = '&#10003;';
-    text.innerHTML = `Today's surplus of <strong>${fmtRM(r.todaySurplus)}</strong>/mo is assumed reinvested each year.`;
-  } else {
-    callout.className = 'callout warn';
-    icon.innerHTML = '&#9888;';
-    text.innerHTML = `Expenses exceed take-home income by <strong>${fmtRM(Math.abs(r.todaySurplus))}</strong>/mo — no surplus is being invested.`;
-  }
-
-  const labels = r.rows.map(row=>row.age);
-  chart.data.labels = labels;
-  chart.data.datasets[0].data = r.rows.map(row=>row.epf);
-  chart.data.datasets[1].data = r.rows.map(row=>row.fd);
-  chart.data.datasets[2].data = r.rows.map(row=>row.invest);
-  chart.data.datasets[3].data = labels.map(()=>Math.round(r.targetCorpus));
-  chart.update('none');
+function Field({ label, hint, value, onChange, prefix, suffix, step = 1, min = 0 }) {
+  return (
+    <label style={{ display: "block" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+        <span style={{ fontSize: 13, color: COLORS.cream, fontWeight: 500, fontFamily: "Inter, sans-serif" }}>{label}</span>
+        {hint && <span style={{ fontSize: 11, color: COLORS.faint, fontFamily: "Inter, sans-serif" }}>{hint}</span>}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          background: COLORS.panelAlt,
+          border: `1px solid ${COLORS.line}`,
+          borderRadius: 8,
+          padding: "8px 10px",
+          gap: 6,
+        }}
+      >
+        {prefix && (
+          <span style={{ color: COLORS.faint, fontSize: 13, fontFamily: "IBM Plex Mono, monospace" }}>{prefix}</span>
+        )}
+        <input
+          type="number"
+          value={value}
+          step={step}
+          min={min}
+          onChange={(e) => onChange(e.target.value === "" ? 0 : parseFloat(e.target.value))}
+          style={{
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            color: COLORS.cream,
+            fontSize: 14,
+            fontFamily: "IBM Plex Mono, monospace",
+            width: "100%",
+            textAlign: suffix ? "right" : "left",
+          }}
+        />
+        {suffix && (
+          <span style={{ color: COLORS.faint, fontSize: 13, fontFamily: "IBM Plex Mono, monospace" }}>{suffix}</span>
+        )}
+      </div>
+    </label>
+  );
 }
 
-document.getElementById('assumpToggle').addEventListener('click', function(){
-  const body = document.getElementById('assumpBody');
-  body.classList.toggle('show');
-  this.classList.toggle('open');
-});
+function SectionHeader({ icon: Icon, title, subtitle }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+      <div
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: 7,
+          background: "rgba(201,162,75,0.14)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <Icon size={16} color={COLORS.gold} />
+      </div>
+      <div>
+        <div style={{ fontFamily: "Fraunces, serif", fontSize: 17, color: COLORS.cream, lineHeight: 1.2 }}>{title}</div>
+        {subtitle && <div style={{ fontSize: 12, color: COLORS.faint, fontFamily: "Inter, sans-serif" }}>{subtitle}</div>}
+      </div>
+    </div>
+  );
+}
 
-document.querySelectorAll('input[type=number]').forEach(inp=>{
-  inp.addEventListener('input', render);
-});
+function Gauge({ pct }) {
+  const clamped = Math.max(0, Math.min(pct, 130));
+  const r = 100;
+  const cx = 130;
+  const cy = 120;
+  const circumference = Math.PI * r;
+  const frac = Math.min(clamped / 130, 1);
+  const dashOffset = circumference * (1 - frac);
 
-window.addEventListener('load', ()=>{
-  initChart();
-  render();
-});
-</script>
-</body>
-</html>
+  let zoneColor = COLORS.coral;
+  if (pct >= 100) zoneColor = COLORS.teal;
+  else if (pct >= 60) zoneColor = COLORS.gold;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <svg viewBox="0 0 260 140" width="100%" style={{ maxWidth: 280 }}>
+        <path
+          d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
+          fill="none"
+          stroke={COLORS.line}
+          strokeWidth={14}
+          strokeLinecap="round"
+        />
+        <path
+          d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
+          fill="none"
+          stroke={zoneColor}
+          strokeWidth={14}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={dashOffset}
+          style={{ transition: "stroke-dashoffset 0.4s ease, stroke 0.4s ease" }}
+        />
+        <text x={cx} y={cy - 18} textAnchor="middle" fontFamily="Fraunces, serif" fontSize="34" fill={COLORS.cream}>
+          {Math.round(pct)}%
+        </text>
+        <text x={cx} y={cy + 4} textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="11" fill={COLORS.faint} letterSpacing="0.5">
+          OF RETIREMENT GOAL
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+export default function RetirementDashboard() {
+  const [inputs, setInputs] = useState({
+    salary: 6000,
+    increment: 4,
+    currentEPF: 50000,
+    epfEmployee: 11,
+    epfEmployer: 13,
+    epfVoluntary: 0,
+    bonus: 6000,
+    fd: 20000,
+    fdRate: 3.5,
+    invest: 10000,
+    investReturn: 7,
+    otherIncome: 0,
+  });
+
+  const [assump, setAssump] = useState({
+    currentAge: 30,
+    retireAge: 60,
+    lifeExpectancy: 80,
+    epfDividend: 5.5,
+    inflation: 3,
+  });
+  const [showAssump, setShowAssump] = useState(false);
+
+  const [expenses, setExpenses] = useState(
+    Object.fromEntries(EXPENSE_CATEGORIES.map((c) => [c.key, c.default]))
+  );
+
+  const setInput = (k) => (v) => setInputs((s) => ({ ...s, [k]: v }));
+  const setAssumpField = (k) => (v) => setAssump((s) => ({ ...s, [k]: v }));
+  const setExpense = (k) => (v) => setExpenses((s) => ({ ...s, [k]: v }));
+
+  const result = useProjection(inputs, expenses, assump);
+  const totalExpense = result.monthlyExpenseToday;
+
+  const chartData = result.rows.map((r) => ({
+    age: r.age,
+    EPF: r.epf,
+    FD: r.fd,
+    Investments: r.invest,
+    Total: r.total,
+  }));
+
+  return (
+    <div
+      style={{
+        background: COLORS.bg,
+        minHeight: "100vh",
+        padding: "32px 20px",
+        fontFamily: "Inter, sans-serif",
+      }}
+    >
+      <style>{FONT_IMPORT}</style>
+      <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: 12, letterSpacing: 2, color: COLORS.gold, fontWeight: 600, marginBottom: 6 }}>
+            RETIREMENT PLANNER
+          </div>
+          <h1 style={{ fontFamily: "Fraunces, serif", fontSize: 34, color: COLORS.cream, margin: 0, fontWeight: 500 }}>
+            Your runway to retirement
+          </h1>
+          <p style={{ color: COLORS.muted, fontSize: 14, marginTop: 8, maxWidth: 640, lineHeight: 1.6 }}>
+            Enter your income, EPF, savings and monthly spending. The model grows each pot to age{" "}
+            {assump.retireAge} and checks it against what your expenses will cost by then.
+          </p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
+          {/* LEFT: income & savings */}
+          <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.line}`, borderRadius: 14, padding: 22 }}>
+            <SectionHeader icon={Wallet} title="Income & savings" subtitle="What you earn and hold today" />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <Field label="Current salary" hint="monthly" prefix="RM" value={inputs.salary} onChange={setInput("salary")} />
+              <Field label="Yearly increment" hint="salary growth" value={inputs.increment} onChange={setInput("increment")} suffix="%" step={0.5} />
+              <Field label="Annual bonus" hint="this year" prefix="RM" value={inputs.bonus} onChange={setInput("bonus")} />
+              <Field label="Other income" hint="monthly" prefix="RM" value={inputs.otherIncome} onChange={setInput("otherIncome")} />
+            </div>
+
+            <div style={{ height: 1, background: COLORS.line, margin: "18px 0" }} />
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <Landmark size={15} color={COLORS.teal} />
+              <span style={{ fontSize: 13, color: COLORS.cream, fontWeight: 500 }}>EPF</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <Field label="Current EPF savings" prefix="RM" value={inputs.currentEPF} onChange={setInput("currentEPF")} />
+              <Field label="Employee contribution" value={inputs.epfEmployee} onChange={setInput("epfEmployee")} suffix="%" step={0.5} />
+              <Field label="Employer contribution" value={inputs.epfEmployer} onChange={setInput("epfEmployer")} suffix="%" step={0.5} />
+              <Field label="Voluntary contribution" hint="extra, monthly" prefix="RM" value={inputs.epfVoluntary} onChange={setInput("epfVoluntary")} />
+            </div>
+
+            <div style={{ height: 1, background: COLORS.line, margin: "18px 0" }} />
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <PiggyBank size={15} color={COLORS.teal} />
+              <span style={{ fontSize: 13, color: COLORS.cream, fontWeight: 500 }}>Fixed deposit</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <Field label="FD amount" prefix="RM" value={inputs.fd} onChange={setInput("fd")} />
+              <Field label="FD interest" hint="p.a." value={inputs.fdRate} onChange={setInput("fdRate")} suffix="%" step={0.1} />
+            </div>
+
+            <div style={{ height: 1, background: COLORS.line, margin: "18px 0" }} />
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <LineChartIcon size={15} color={COLORS.teal} />
+              <span style={{ fontSize: 13, color: COLORS.cream, fontWeight: 500 }}>Investments</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <Field label="Investment amount" prefix="RM" value={inputs.invest} onChange={setInput("invest")} />
+              <Field label="Return" hint="per year" value={inputs.investReturn} onChange={setInput("investReturn")} suffix="%" step={0.5} />
+            </div>
+
+            <button
+              onClick={() => setShowAssump((s) => !s)}
+              style={{
+                marginTop: 20,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                background: "none",
+                border: "none",
+                color: COLORS.faint,
+                fontSize: 12,
+                cursor: "pointer",
+                padding: 0,
+              }}
+            >
+              <Settings2 size={13} />
+              Assumptions (age, EPF dividend, inflation)
+              <ChevronDown size={13} style={{ transform: showAssump ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+            </button>
+            {showAssump && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
+                <Field label="Current age" value={assump.currentAge} onChange={setAssumpField("currentAge")} suffix="yrs" />
+                <Field label="Retirement age" value={assump.retireAge} onChange={setAssumpField("retireAge")} suffix="yrs" />
+                <Field label="Project until age" hint="life expectancy" value={assump.lifeExpectancy} onChange={setAssumpField("lifeExpectancy")} suffix="yrs" />
+                <Field label="EPF dividend" hint="long-run avg" value={assump.epfDividend} onChange={setAssumpField("epfDividend")} suffix="%" step={0.1} />
+                <Field label="Inflation" hint="for future expenses" value={assump.inflation} onChange={setAssumpField("inflation")} suffix="%" step={0.5} />
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT: expenses */}
+          <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.line}`, borderRadius: 14, padding: 22 }}>
+            <SectionHeader icon={ShoppingCart} title="Monthly expenses" subtitle="Categorised so nothing's hiding" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {EXPENSE_CATEGORIES.map((c) => {
+                const Icon = c.icon;
+                return (
+                  <div key={c.key} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: 7,
+                        background: COLORS.panelAlt,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Icon size={14} color={COLORS.muted} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, color: COLORS.cream, fontWeight: 500 }}>{c.label}</div>
+                      <div style={{ fontSize: 11, color: COLORS.faint, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {c.sub}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        background: COLORS.panelAlt,
+                        border: `1px solid ${COLORS.line}`,
+                        borderRadius: 8,
+                        padding: "6px 8px",
+                        gap: 4,
+                        width: 128,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <span style={{ color: COLORS.faint, fontSize: 12, fontFamily: "IBM Plex Mono, monospace" }}>RM</span>
+                      <input
+                        type="number"
+                        value={expenses[c.key]}
+                        min={0}
+                        onChange={(e) => setExpense(c.key)(e.target.value === "" ? 0 : parseFloat(e.target.value))}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          outline: "none",
+                          color: COLORS.cream,
+                          fontSize: 13,
+                          fontFamily: "IBM Plex Mono, monospace",
+                          width: "100%",
+                          textAlign: "right",
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                marginTop: 16,
+                paddingTop: 14,
+                borderTop: `1px solid ${COLORS.line}`,
+              }}
+            >
+              <span style={{ fontSize: 13, color: COLORS.muted }}>Total monthly expenses</span>
+              <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 17, color: COLORS.cream, fontWeight: 600 }}>
+                {fmtRM(totalExpense)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* RESULTS */}
+        <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.line}`, borderRadius: 14, padding: 24 }}>
+          <SectionHeader
+            icon={TrendingUp}
+            title="Readiness"
+            subtitle={`Growth to age ${assump.retireAge}, then drawdown to age ${assump.lifeExpectancy}`}
+          />
+
+          <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: 28 }}>
+            <div>
+              <Gauge pct={result.progressPct} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 12, color: COLORS.faint }}>Corpus at retirement</span>
+                  <span style={{ fontSize: 13, fontFamily: "IBM Plex Mono, monospace", color: COLORS.cream }}>
+                    {fmtRMk(result.corpusAtRetirement)}
+                  </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 12, color: COLORS.faint }}>Target corpus (4% rule)</span>
+                  <span style={{ fontSize: 13, fontFamily: "IBM Plex Mono, monospace", color: COLORS.cream }}>
+                    {fmtRMk(result.targetCorpus)}
+                  </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 12, color: COLORS.faint }}>Expenses today</span>
+                  <span style={{ fontSize: 13, fontFamily: "IBM Plex Mono, monospace", color: COLORS.cream }}>
+                    {fmtRM(result.monthlyExpenseToday)}/mo
+                  </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 12, color: COLORS.faint }}>Same expenses in 10 yrs</span>
+                  <span style={{ fontSize: 13, fontFamily: "IBM Plex Mono, monospace", color: COLORS.cream }}>
+                    {fmtRM(result.expenseIn10Yrs)}/mo
+                  </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 12, color: COLORS.faint }}>Withdrawal needed at {assump.retireAge}</span>
+                  <span style={{ fontSize: 13, fontFamily: "IBM Plex Mono, monospace", color: COLORS.cream }}>
+                    {fmtRM(result.futureMonthlyExpense)}/mo
+                  </span>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  marginTop: 16,
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "flex-start",
+                  background: result.todaySurplus >= 0 ? "rgba(79,179,166,0.1)" : "rgba(217,119,107,0.1)",
+                  border: `1px solid ${result.todaySurplus >= 0 ? "rgba(79,179,166,0.35)" : "rgba(217,119,107,0.35)"}`,
+                  borderRadius: 8,
+                  padding: 10,
+                }}
+              >
+                {result.todaySurplus >= 0 ? (
+                  <CheckCircle2 size={15} color={COLORS.teal} style={{ flexShrink: 0, marginTop: 1 }} />
+                ) : (
+                  <AlertTriangle size={15} color={COLORS.coral} style={{ flexShrink: 0, marginTop: 1 }} />
+                )}
+                <div style={{ fontSize: 12, color: COLORS.muted, lineHeight: 1.5 }}>
+                  {result.todaySurplus >= 0 ? (
+                    <>Today's surplus of <strong style={{ color: COLORS.cream }}>{fmtRM(result.todaySurplus)}</strong>/mo is assumed reinvested each year.</>
+                  ) : (
+                    <>Expenses exceed take-home income by <strong style={{ color: COLORS.cream }}>{fmtRM(Math.abs(result.todaySurplus))}</strong>/mo — no surplus is being invested.</>
+                  )}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  marginTop: 10,
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "flex-start",
+                  background: result.depletedAge === null ? "rgba(79,179,166,0.1)" : "rgba(217,119,107,0.1)",
+                  border: `1px solid ${result.depletedAge === null ? "rgba(79,179,166,0.35)" : "rgba(217,119,107,0.35)"}`,
+                  borderRadius: 8,
+                  padding: 10,
+                }}
+              >
+                {result.depletedAge === null ? (
+                  <CheckCircle2 size={15} color={COLORS.teal} style={{ flexShrink: 0, marginTop: 1 }} />
+                ) : (
+                  <AlertTriangle size={15} color={COLORS.coral} style={{ flexShrink: 0, marginTop: 1 }} />
+                )}
+                <div style={{ fontSize: 12, color: COLORS.muted, lineHeight: 1.5 }}>
+                  {result.depletedAge === null ? (
+                    <>Withdrawing inflation-adjusted expenses each year, your corpus lasts to age {assump.lifeExpectancy} with{" "}
+                      <strong style={{ color: COLORS.cream }}>{fmtRMk(result.corpusAtEnd)}</strong> left over.</>
+                  ) : (
+                    <>At this rate, your savings run out at age <strong style={{ color: COLORS.cream }}>{result.depletedAge}</strong> —{" "}
+                      {assump.lifeExpectancy - result.depletedAge} years short of {assump.lifeExpectancy}.</>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div style={{ height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="gEpf" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={COLORS.teal} stopOpacity={0.55} />
+                        <stop offset="100%" stopColor={COLORS.teal} stopOpacity={0.05} />
+                      </linearGradient>
+                      <linearGradient id="gFd" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#7F9BD1" stopOpacity={0.5} />
+                        <stop offset="100%" stopColor="#7F9BD1" stopOpacity={0.05} />
+                      </linearGradient>
+                      <linearGradient id="gInv" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={COLORS.gold} stopOpacity={0.55} />
+                        <stop offset="100%" stopColor={COLORS.gold} stopOpacity={0.05} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke={COLORS.line} strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="age" stroke={COLORS.faint} tick={{ fontSize: 11, fontFamily: "IBM Plex Mono, monospace" }} tickLine={false} axisLine={{ stroke: COLORS.line }} />
+                    <YAxis stroke={COLORS.faint} tick={{ fontSize: 11, fontFamily: "IBM Plex Mono, monospace" }} tickLine={false} axisLine={false} tickFormatter={(v) => fmtRMk(v)} width={64} />
+                    <Tooltip
+                      contentStyle={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.line}`, borderRadius: 8, fontSize: 12, fontFamily: "Inter, sans-serif" }}
+                      labelStyle={{ color: COLORS.cream, marginBottom: 4 }}
+                      itemStyle={{ color: COLORS.muted }}
+                      formatter={(v) => fmtRM(v)}
+                      labelFormatter={(a) => `Age ${a}`}
+                    />
+                    <Area type="monotone" dataKey="EPF" stackId="1" stroke={COLORS.teal} fill="url(#gEpf)" strokeWidth={1.5} />
+                    <Area type="monotone" dataKey="FD" stackId="1" stroke="#7F9BD1" fill="url(#gFd)" strokeWidth={1.5} />
+                    <Area type="monotone" dataKey="Investments" stackId="1" stroke={COLORS.gold} fill="url(#gInv)" strokeWidth={1.5} />
+                    <ReferenceLine y={result.targetCorpus} stroke={COLORS.coral} strokeDasharray="5 4" strokeWidth={1.5} label={{ value: "Target", position: "insideTopRight", fill: COLORS.coral, fontSize: 11 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+              <div style={{ display: "flex", gap: 18, marginTop: 10, flexWrap: "wrap" }}>
+                {[
+                  ["EPF", COLORS.teal],
+                  ["FD", "#7F9BD1"],
+                  ["Investments", COLORS.gold],
+                  ["Target (4% rule)", COLORS.coral],
+                ].map(([label, color]) => (
+                  <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ width: 9, height: 9, borderRadius: 2, background: color, display: "inline-block" }} />
+                    <span style={{ fontSize: 12, color: COLORS.muted }}>{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p style={{ fontSize: 11, color: COLORS.faint, marginTop: 16, lineHeight: 1.6 }}>
+          Target corpus uses the 4% rule: annual future expenses ÷ 0.04, with expenses inflated at {assump.inflation}%
+          p.a. Before retirement, surplus cash (after EPF and expenses) is reinvested each year. From age{" "}
+          {assump.retireAge}, the model withdraws that year's inflation-adjusted expenses from EPF, FD and
+          investments proportionally, while the remainder keeps earning its own rate, through to age{" "}
+          {assump.lifeExpectancy}. This is a planning estimate, not financial advice.
+        </p>
+      </div>
+    </div>
+  );
+}
+
